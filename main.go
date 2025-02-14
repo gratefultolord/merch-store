@@ -65,13 +65,15 @@ func main() {
 			http.MethodDelete},
 	}))
 
-	authMiddleware := mw.NewAuthMiddleware(userRepo, cfg.JWTSecret)
-	e.Use(authMiddleware)
-
 	e.POST("/api/auth", authHandler.Auth)
-	e.POST("/api/sendCoin", sendCoinHandler.SendCoin)
-	e.POST("/api/buy/:item", buyHandler.Buy)
-	e.GET("/api/info", infoHandler.Info)
+
+	authGroup := e.Group("")
+	authMiddleware := mw.NewAuthMiddleware(userRepo, cfg.JWTSecret)
+	authGroup.Use(authMiddleware)
+
+	authGroup.POST("/api/sendCoin", sendCoinHandler.SendCoin)
+	authGroup.POST("/api/buy/:item", buyHandler.Buy)
+	authGroup.GET("/api/info", infoHandler.Info)
 
 	go func() {
 		addr := fmt.Sprintf(":%s", cfg.ServerPort)
