@@ -56,7 +56,5 @@ func (h *BuyHandler) Buy(c echo.Context) error {
 			"error": err.Error(),
 		})
 	}
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "item purchased successfully",
-	})
+	return c.NoContent(http.StatusOK)
 }

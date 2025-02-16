@@ -2,12 +2,17 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"github.com/gratefultolord/merch-store/internal/repository"
 	"github.com/gratefultolord/merch-store/internal/services"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"strconv"
 )
+
+type SendCoinRequest struct {
+	ToUser string `json:"toUser" validate:"required"`
+	Amount int    `json:"amount" validate:"required,gte=1"`
+}
 
 type SendCoinHandler struct {
 	coinService services.CoinService
@@ -33,41 +38,41 @@ func (h *SendCoinHandler) SendCoin(c echo.Context) error {
 	}
 
 	fromUserID, ok := fromUserIDInterface.(int)
+	fmt.Printf("fromUserID: %v\n", fromUserID)
 	if !ok {
 		return c.JSON(http.StatusUnauthorized, map[string]string{
 			"error": "user ID not found in context",
 		})
 	}
 
-	toUsername := c.FormValue("toUser")
-	amountStr := c.FormValue("amount")
-
-	amount, err := strconv.ParseFloat(amountStr, 64)
-	if err != nil {
+	var req SendCoinRequest
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid amount",
+			"error": "failed to parse body",
 		})
 	}
 
-	toUser, err := h.userRepo.GetByUsername(context.Background(), toUsername)
+	fmt.Printf("SendCoinRequest: %+v\n", req)
+
+	toUser, err := h.userRepo.GetByUsername(context.Background(), req.ToUser)
+	fmt.Printf("toUser: %v\n", toUser)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "failed to get user",
+			"error": "failed getting receiver",
 		})
 	}
+
 	if toUser == nil {
-		return c.JSON(http.StatusNotFound, map[string]string{
+		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "toUser not found",
 		})
 	}
 
-	if err := h.coinService.Send(context.Background(), fromUserID, toUser.ID, amount); err != nil {
+	if err := h.coinService.Send(context.Background(), fromUserID, toUser.ID, req.Amount); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "failed to send coin",
+			"error": "failed sending coin",
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "coins sent successfully",
-	})
+	return c.NoContent(http.StatusOK)
 }

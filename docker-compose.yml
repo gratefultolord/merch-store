@@ -18,7 +18,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["sh", "-c", "sleep 10 && ./merch-store"]
+    command: ["sh", "-c", "sleep 1 && ./merch-store"]
 
   db:
     image: postgres:13
@@ -33,6 +33,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./migrations/001_init.up.sql:/docker-entrypoint-initdb.d/001_init.up.sql
+      - ./migrations/002_seed_items.up.sql:/docker-entrypoint-initdb.d/002_seed_items.up.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U avito -d avito_shop"]
       interval: 5s

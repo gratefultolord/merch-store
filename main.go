@@ -42,11 +42,12 @@ func main() {
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 	coinService := services.NewCoinService(userRepo, transactionRepo, db)
 	inventoryService := services.NewInventoryService(userRepo, itemRepo, transactionRepo, db)
+	infoService := services.NewInfoService(userRepo, coinService)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	sendCoinHandler := handlers.NewSendCoinHandler(coinService, userRepo)
 	buyHandler := handlers.NewBuyHandler(inventoryService, userRepo, itemRepo)
-	infoHandler := handlers.NewInfoHandler(userRepo, transactionRepo)
+	infoHandler := handlers.NewInfoHandler(infoService)
 
 	e := echo.New()
 

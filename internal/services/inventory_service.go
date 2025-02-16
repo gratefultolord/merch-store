@@ -55,40 +55,30 @@ func (s *inventoryService) Buy(ctx context.Context, userID int, itemName string)
 		return fmt.Errorf("services: user not found")
 	}
 
-	items, err := s.itemRepo.GetAll(ctx)
+	item, err := s.itemRepo.GetItemByName(ctx, itemName)
 	if err != nil {
-		return fmt.Errorf("services: failed to get all items: %w", err)
+		return fmt.Errorf("services: failed to get item by name: %w", err)
 	}
-
-	var targetItem *models.Item
-	for _, i := range items {
-		if i.Name == itemName {
-			targetItem = &i
-			break
-		}
-	}
-
-	if targetItem == nil {
+	if item == nil {
 		return fmt.Errorf("services: item not found")
 	}
 
-	if user.Balance < targetItem.Price {
+	if user.Balance < item.Price {
 		return fmt.Errorf("services: insufficient balance")
 	}
 
-	if err := s.userRepo.UpdateBalance(ctx, tx, userID, -targetItem.Price); err != nil {
+	if err := s.userRepo.UpdateBalance(ctx, tx, userID, -item.Price); err != nil {
 		return fmt.Errorf("services: failed to update user balance: %w", err)
 	}
 
-	user.Inventory = append(user.Inventory, *targetItem)
-	if err := s.userRepo.UpdateInventory(ctx, tx, userID, user.Inventory); err != nil {
-		return fmt.Errorf("services: failed to update user inventory: %w", err)
+	if err := s.userRepo.AddOrIncrementItemInventory(ctx, tx, userID, item.ID, 1); err != nil {
+		return fmt.Errorf("services: failed to add to inventory: %w", err)
 	}
 
 	transaction := &models.Transaction{
-		SenderID:   userID,
-		ReceiverID: 0,
-		Amount:     targetItem.Price,
+		SenderID:   user.ID,
+		ReceiverID: -1,
+		Amount:     item.Price,
 	}
 
 	if err := s.transactionRepo.Create(ctx, tx, transaction); err != nil {

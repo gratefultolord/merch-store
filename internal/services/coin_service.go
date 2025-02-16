@@ -9,7 +9,8 @@ import (
 )
 
 type CoinService interface {
-	Send(ctx context.Context, fromUserID int, toUserID int, amount float64) error
+	Send(ctx context.Context, fromUserID int, toUserID int, amount int) error
+	GetCoinHistory(ctx context.Context, userID int) (*models.CoinHistory, error)
 }
 
 type coinService struct {
@@ -26,7 +27,7 @@ func NewCoinService(userRepo repository.UserRepo, transactionRepo repository.Tra
 	}
 }
 
-func (s *coinService) Send(ctx context.Context, fromUserID, toUserID int, amount float64) error {
+func (s *coinService) Send(ctx context.Context, fromUserID, toUserID int, amount int) error {
 	tx, err := s.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("services: failed to begin transaction: %w", err)
@@ -79,4 +80,51 @@ func (s *coinService) Send(ctx context.Context, fromUserID, toUserID int, amount
 	}
 
 	return nil
+}
+
+func (s *coinService) GetCoinHistory(ctx context.Context, userID int) (*models.CoinHistory, error) {
+	allTransactions, err := s.transactionRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("services: failed to get transaction by user id: %w", err)
+	}
+
+	received := make([]models.TransactionSummary, 0)
+	sent := make([]models.TransactionSummary, 0)
+
+	for _, t := range allTransactions {
+		var fromUser, toUser string
+
+		if t.SenderID != -1 {
+			fromUser, err = s.userRepo.GetUsernameByID(ctx, t.SenderID)
+			if err != nil {
+				return nil, fmt.Errorf("services: failed to get sender username by id: %w", err)
+			}
+		}
+
+		if t.ReceiverID != -1 {
+			toUser, err = s.userRepo.GetUsernameByID(ctx, t.ReceiverID)
+			if err != nil {
+				return nil, fmt.Errorf("services: failed to get receiver username by id: %w", err)
+			}
+		}
+
+		if t.ReceiverID == userID {
+			received = append(received, models.TransactionSummary{
+				FromUser: fromUser,
+				Amount:   t.Amount,
+			})
+		} else if t.SenderID == userID {
+			sent = append(sent, models.TransactionSummary{
+				ToUser: toUser,
+				Amount: t.Amount,
+			})
+		}
+	}
+
+	coinHistory := &models.CoinHistory{
+		Received: received,
+		Sent:     sent,
+	}
+
+	return coinHistory, nil
 }

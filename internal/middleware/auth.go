@@ -18,13 +18,13 @@ func NewAuthMiddleware(userRepo repository.UserRepo, secret string) echo.Middlew
 			// Получаем значение заголовка Authorization
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing authorization header"})
+				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: missing authorization header"})
 			}
 
 			// Разделяем заголовок на две части: "Bearer" и сам токен
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid authorization header format"})
+				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: invalid authorization header format"})
 			}
 
 			// Получаем сам JWT-токен
@@ -41,7 +41,7 @@ func NewAuthMiddleware(userRepo repository.UserRepo, secret string) echo.Middlew
 			})
 
 			if err != nil {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: invalid token 1"})
 			}
 
 			// Проверяем, является ли токен действительным
@@ -49,23 +49,24 @@ func NewAuthMiddleware(userRepo repository.UserRepo, secret string) echo.Middlew
 				// Получаем идентификатор пользователя из клеймов токена
 				subClaim, ok := claims["sub"]
 				if !ok {
-					return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token claims"})
+					return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: invalid token claims"})
 				}
 
 				// Преобразуем идентификатор пользователя в целое число
 				userID, ok := subClaim.(float64)
 				if !ok {
-					return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token claims"})
+					return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: invalid token subclaims"})
 				}
 				userIDInt := int(userID)
 
 				// Получаем пользователя по идентификатору
 				user, err := userRepo.GetByID(context.Background(), userIDInt)
 				if err != nil {
-					return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get user by ID"})
+					fmt.Printf("mw: userRepo.GetByID err: %v", err)
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": "mw: failed to get user by ID"})
 				}
 				if user == nil {
-					return c.JSON(http.StatusUnauthorized, map[string]string{"error": "user not found"})
+					return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: user not found"})
 				}
 
 				// Добавляем идентификатор пользователя в контекст запроса
@@ -75,7 +76,7 @@ func NewAuthMiddleware(userRepo repository.UserRepo, secret string) echo.Middlew
 				return next(c)
 			}
 
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "mw: invalid token 2"})
 		}
 	}
 }

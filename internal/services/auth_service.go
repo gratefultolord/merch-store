@@ -43,6 +43,7 @@ func (s *authService) Auth(ctx context.Context, username string, password string
 
 		user = newUser
 	} else {
+		fmt.Printf("user.PasswordHash: %v, password: %v", user.PasswordHash, password)
 		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 			return "", fmt.Errorf("services: invalid password: %w", err)
 		}
