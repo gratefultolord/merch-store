@@ -26,7 +26,7 @@ func (r *transactionRepo) Create(ctx context.Context, tx *sqlx.Tx, transaction *
 	err := tx.QueryRowContext(
 		ctx, query, transaction.SenderID, transaction.ReceiverID, transaction.Amount).Scan(&transaction.ID)
 	if err != nil {
-		return fmt.Errorf("cannot create transaction: %w", err)
+		return fmt.Errorf("repository: cannot create transaction: %w", err)
 	}
 
 	return nil

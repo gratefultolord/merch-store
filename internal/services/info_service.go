@@ -27,28 +27,25 @@ func (s *infoService) GetUserInfo(ctx context.Context, userID int) (*models.Info
 	user, err := s.userRepo.GetByID(ctx, userID)
 
 	if err != nil {
-		return nil, fmt.Errorf("service: failed getting user info by id: %v", err)
+		return nil, fmt.Errorf("services: failed getting user info by id: %v", err)
 	}
 
 	if user == nil {
-		return nil, fmt.Errorf("service: user not found")
+		return nil, fmt.Errorf("services: user not found")
 	}
 
 	coinHistory, err := s.coinService.GetCoinHistory(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("service: failed getting coin history: %v", err)
+		return nil, fmt.Errorf("services: failed getting coin history: %v", err)
 	}
 
 	inventory := convertInventory(user.Inventory)
-	fmt.Printf("services: inventory value: %+v\n", inventory)
 
 	response := &models.InfoResponse{
 		Coins:       user.Balance,
 		Inventory:   inventory,
 		CoinHistory: *coinHistory,
 	}
-
-	fmt.Printf("services: response value: %+v\n", response)
 
 	return response, nil
 }

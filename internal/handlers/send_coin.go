@@ -52,11 +52,9 @@ func (h *SendCoinHandler) SendCoin(c echo.Context) error {
 		})
 	}
 
-	fmt.Printf("SendCoinRequest: %+v\n", req)
-
 	toUser, err := h.userRepo.GetByUsername(context.Background(), req.ToUser)
-	fmt.Printf("toUser: %v\n", toUser)
 	if err != nil {
+		c.Logger().Errorf("send coin service error: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed getting receiver",
 		})
@@ -64,11 +62,12 @@ func (h *SendCoinHandler) SendCoin(c echo.Context) error {
 
 	if toUser == nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "toUser not found",
+			"error": "receiver not found",
 		})
 	}
 
 	if err := h.coinService.Send(context.Background(), fromUserID, toUser.ID, req.Amount); err != nil {
+		c.Logger().Errorf("send coin service error: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed sending coin",
 		})

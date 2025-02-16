@@ -32,6 +32,7 @@ func (h *InfoHandler) Info(c echo.Context) error {
 
 	info, err := h.infoService.GetUserInfo(context.Background(), userID)
 	if err != nil {
+		c.Logger().Errorf("info service error: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "failed to get user"})
 	}

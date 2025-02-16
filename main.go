@@ -27,7 +27,6 @@ func main() {
 	}
 
 	time.Sleep(5 * time.Second)
-	fmt.Println(cfg.GetDatabaseURL())
 
 	db, err := sqlx.Connect("postgres", cfg.GetDatabaseURL())
 	if err != nil {

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/gratefultolord/merch-store/internal/services"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -27,8 +26,6 @@ func (h *AuthHandler) Auth(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 
-	fmt.Printf("username: %v, password: %v\n", req.Username, req.Password)
-
 	if req.Username == "" || req.Password == "" {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "username and password are required"})
@@ -36,6 +33,7 @@ func (h *AuthHandler) Auth(c echo.Context) error {
 
 	token, err := h.authService.Auth(context.Background(), req.Username, req.Password)
 	if err != nil {
+		c.Logger().Errorf("auth service error: %v, username: %s", err, req.Username)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 

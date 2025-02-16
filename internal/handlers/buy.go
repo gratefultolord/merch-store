@@ -52,6 +52,7 @@ func (h *BuyHandler) Buy(c echo.Context) error {
 	}
 
 	if err := h.inventoryService.Buy(context.Background(), userID, itemName); err != nil {
+		c.Logger().Errorf("buy service error: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
 		})

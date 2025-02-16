@@ -45,7 +45,6 @@ func (r *userRepo) GetByID(ctx context.Context, userID int) (*models.User, error
 	}
 	defer rows.Close()
 
-	// Обработка первой строки
 	if rows.Next() {
 		var itemID sql.NullInt64
 		var itemName sql.NullString
@@ -65,13 +64,10 @@ func (r *userRepo) GetByID(ctx context.Context, userID int) (*models.User, error
 			})
 		}
 	} else {
-		// Если данных о пользователе нет
 		return nil, nil
 	}
 
-	// Обработка последующих строк
 	for rows.Next() {
-		// Пользовательские данные уже получены, поэтому используем dummy-переменные
 		var dummyID int
 		var dummyUsername string
 		var dummyBalance int
@@ -170,7 +166,6 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 
 	query := `INSERT INTO users (username, password_hash, balance) VALUES ($1, $2, $3) returning id`
 	err = r.db.QueryRowContext(ctx, query, user.Username, hashedPassword, user.Balance).Scan(&user.ID)
-	fmt.Printf("repository: user.ID: %v\n", user.ID)
 	if err != nil {
 		return fmt.Errorf("repository: failed to create new user: %w", err)
 	}
